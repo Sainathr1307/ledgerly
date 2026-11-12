@@ -31,26 +31,30 @@ jobs:
       - name: Pick an iPhone simulator
         id: sim
         run: |
-          UDID=$(xcrun simctl list devices available -j | python3 -c '
-          import json, sys
+          SDK_MAJOR=$(xcrun --sdk iphonesimulator --show-sdk-version | cut -d. -f1)
+          echo "Simulator SDK major version: $SDK_MAJOR"
+          UDID=$(xcrun simctl list devices available -j | SDK_MAJOR="$SDK_MAJOR" python3 -c '
+          import json, os, sys
+          want = int(os.environ["SDK_MAJOR"])
           data = json.load(sys.stdin)["devices"]
-          best = None
+          cands = []
           for runtime, devs in data.items():
               if "iOS" not in runtime:
                   continue
               ver = tuple(int(x) for x in runtime.split("iOS-")[-1].split("-") if x.isdigit())
-              if ver < (18,):
+              if not ver or ver[0] < 18:
                   continue
               for d in devs:
                   if d.get("isAvailable") and d["name"].startswith("iPhone"):
-                      cand = (ver, d["name"], d["udid"])
-                      if best is None or cand[0] > best[0]:
-                          best = cand
-          print(best[2] if best else "")
+                      # prefer the runtime that matches the SDK, then the newest, then a plain/Pro model
+                      cands.append((ver[0] == want, ver, "Pro" in d["name"] and "Max" not in d["name"], d["name"], d["udid"]))
+          cands.sort(reverse=True)
+          if cands:
+              sys.stderr.write("Chosen: %s on iOS %s\n" % (cands[0][3], ".".join(map(str, cands[0][1]))))
+              print(cands[0][4])
           ')
           test -n "$UDID" || { echo "No iOS 18+ iPhone simulator found"; exit 1; }
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
-          echo "Using simulator $UDID"
 
       - name: Build (app + tests)
         run: |
