@@ -1,0 +1,109 @@
+# Ledgerly — XcodeGen project definition. Run `xcodegen generate` (or scripts/verify.sh) to create Ledgerly.xcodeproj.
+name: Ledgerly
+
+options:
+  bundleIdPrefix: com.example
+  createIntermediateGroups: true
+  xcodeVersion: "16.0"
+  deploymentTarget:
+    iOS: "18.0"
+  developmentLanguage: en
+
+packages:
+  LedgerlyCore:
+    path: Packages/LedgerlyCore
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    IPHONEOS_DEPLOYMENT_TARGET: "18.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    # Signing: leave the team blank in the repo. Set your own team ID here (or in Xcode's
+    # Signing & Capabilities tab) before installing on a device. Simulator builds don't need one.
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+targets:
+  Ledgerly:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: App
+        excludes:
+          - "**/*.md"
+    dependencies:
+      - package: LedgerlyCore
+        product: LedgerlyCore
+    info:
+      # XcodeGen writes this file on every `xcodegen generate`; edit the properties here, not the plist.
+      path: App/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Ledgerly
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSRequiresIPhoneOS: true
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        ITSAppUsesNonExemptEncryption: false
+        NSFaceIDUsageDescription: Ledgerly uses Face ID to unlock the app when you turn on the app lock in Settings.
+        # Only read when the optional FinanceKit source is compiled in; harmless otherwise.
+        NSFinancialDataUsageDescription: Ledgerly can import your Apple Card, Apple Cash and Savings transactions so you don't have to add them by hand. The data stays on this iPhone.
+    # FinanceKit needs a managed entitlement from Apple. When you have it, uncomment this block
+    # (XcodeGen will generate the entitlements file) and the compilation condition further down.
+    # entitlements:
+    #   path: App/Resources/Ledgerly.entitlements
+    #   properties:
+    #     com.apple.developer.financekit: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.ledgerly
+        PRODUCT_NAME: Ledgerly
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # FinanceKit is compiled out by default. To compile it in, uncomment:
+        # SWIFT_ACTIVE_COMPILATION_CONDITIONS: $(inherited) FINANCEKIT_ENABLED
+
+  LedgerlyUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: UITests
+    dependencies:
+      - target: Ledgerly
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.ledgerly.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Ledgerly
+
+schemes:
+  Ledgerly:
+    build:
+      targets:
+        Ledgerly: all
+        LedgerlyUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - package: LedgerlyCore/LedgerlyCoreTests
+        - name: LedgerlyUITests
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
