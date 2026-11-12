@@ -8,7 +8,7 @@ struct SmokeApp: App {
         WindowGroup {
             Text("Ledgerly smoke build")
                 .task {
-                    await LedgerRepository.shared.seedDefaultCategoriesIfNeeded()
+                    try? await LedgerRepository.shared.seedDefaultCategoriesIfNeeded()
                     let data = await LedgerRepository.shared.snapshotAll()
                     print(data.categories.count)
                 }
