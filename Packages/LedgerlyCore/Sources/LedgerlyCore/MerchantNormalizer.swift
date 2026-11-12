@@ -1,8 +1,4 @@
-#if canImport(Darwin)
 import Foundation
-#else
-@preconcurrency import Foundation
-#endif
 
 /// Cleans merchant names so "SHELL OIL 57444", "Shell Oil #57444" and "shell oil" all match.
 public enum MerchantNormalizer {

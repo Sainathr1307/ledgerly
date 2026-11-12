@@ -1,8 +1,4 @@
-#if canImport(Darwin)
 import Foundation
-#else
-@preconcurrency import Foundation
-#endif
 import XCTest
 @testable import LedgerlyCore
 

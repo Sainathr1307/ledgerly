@@ -1,8 +1,4 @@
-#if canImport(Darwin)
 import Foundation
-#else
-@preconcurrency import Foundation
-#endif
 
 /// SplitMix64: a tiny deterministic generator, so demo data is the same on every run and every platform.
 public struct SplitMix64: RandomNumberGenerator, Sendable {

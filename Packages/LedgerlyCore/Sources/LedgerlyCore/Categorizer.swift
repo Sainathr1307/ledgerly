@@ -1,8 +1,4 @@
-#if canImport(Darwin)
 import Foundation
-#else
-@preconcurrency import Foundation
-#endif
 
 /// Why a category was chosen.
 public enum CategorizationReason: String, Codable, Sendable {

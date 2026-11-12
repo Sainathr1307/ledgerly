@@ -1,8 +1,4 @@
-#if canImport(Darwin)
 import Foundation
-#else
-@preconcurrency import Foundation
-#endif
 
 /// A transaction as it arrives from outside: the Wallet shortcut, FinanceKit or a CSV row.
 public struct IncomingTransaction: Hashable, Codable, Sendable {

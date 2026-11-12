@@ -1,8 +1,4 @@
-#if canImport(Darwin)
 import Foundation
-#else
-@preconcurrency import Foundation
-#endif
 
 /// Currency strings and the one rounding helper. Rounding mode is `.plain`
 /// (half away from zero: 0.125 → 0.13, -0.125 → -0.13) everywhere in Ledgerly.
