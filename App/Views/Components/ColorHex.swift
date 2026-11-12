@@ -7,9 +7,7 @@ extension Color {
     /// Builds a color from "#RRGGBB" (the "#" is optional). Unreadable input gives a neutral gray.
     init(hex: String) {
         let cleaned = hex.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
-        var value: UInt64 = 0
-        let ok = cleaned.count == 6 && Scanner(string: cleaned).scanHexInt64(&value)
-        if ok {
+        if cleaned.count == 6, let value = UInt64(cleaned, radix: 16) {
             let red = Double((value >> 16) & 0xFF) / 255.0
             let green = Double((value >> 8) & 0xFF) / 255.0
             let blue = Double(value & 0xFF) / 255.0

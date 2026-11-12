@@ -55,6 +55,6 @@ struct CategoryChip: View {
     }
 
     private var chipBackground: Color {
-        isSelected ? Color(hex: category.colorHex) : Color(.secondarySystemFill)
+        isSelected ? Color(hex: category.colorHex) : Color(uiColor: .secondarySystemFill)
     }
 }

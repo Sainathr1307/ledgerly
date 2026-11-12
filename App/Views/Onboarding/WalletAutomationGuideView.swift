@@ -10,7 +10,7 @@ struct WalletAutomationGuideView: View {
     @State private var testOutcome: TestOutcome?
 
     /// What the last tap on "Test it" produced.
-    private struct TestOutcome {
+    private struct TestOutcome: Sendable {
         var succeeded: Bool
         /// One line: what was saved, or what went wrong. Shown under the button.
         var headline: String
@@ -259,11 +259,5 @@ struct WalletAutomationGuideView: View {
                 recordID: nil
             )
         }
-    }
-}
-
-#Preview {
-    NavigationStack {
-        WalletAutomationGuideView()
     }
 }

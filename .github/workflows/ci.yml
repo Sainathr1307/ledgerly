@@ -1,0 +1,115 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'ci/**']
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-15
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Toolchain info
+        run: |
+          xcodebuild -version
+          swift --version
+          xcrun simctl list devices available | grep -i iphone | head -20
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          SDK_MAJOR=$(xcrun --sdk iphonesimulator --show-sdk-version | cut -d. -f1)
+          echo "Simulator SDK major version: $SDK_MAJOR"
+          UDID=$(xcrun simctl list devices available -j | SDK_MAJOR="$SDK_MAJOR" python3 -c '
+          import json, os, sys
+          want = int(os.environ["SDK_MAJOR"])
+          data = json.load(sys.stdin)["devices"]
+          cands = []
+          for runtime, devs in data.items():
+              if "iOS" not in runtime:
+                  continue
+              ver = tuple(int(x) for x in runtime.split("iOS-")[-1].split("-") if x.isdigit())
+              if not ver or ver[0] < 18:
+                  continue
+              for d in devs:
+                  if d.get("isAvailable") and d["name"].startswith("iPhone"):
+                      # prefer the runtime that matches the SDK, then the newest, then a plain/Pro model
+                      cands.append((ver[0] == want, ver, "Pro" in d["name"] and "Max" not in d["name"], d["name"], d["udid"]))
+          cands.sort(reverse=True)
+          if cands:
+              sys.stderr.write("Chosen: %s on iOS %s\n" % (cands[0][3], ".".join(map(str, cands[0][1]))))
+              print(cands[0][4])
+          ')
+          test -n "$UDID" || { echo "No iOS 18+ iPhone simulator found"; exit 1; }
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Build (app + tests)
+        run: |
+          mkdir -p build
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Ledgerly.xcodeproj -scheme Ledgerly \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build/build.log | grep -E "error:|warning:|\*\* |Compiling|Linking" | grep -vE "^Compiling|^Linking" || true
+          grep -q "TEST BUILD SUCCEEDED" build/build.log
+
+      - name: Build diagnostics summary
+        if: always()
+        run: |
+          echo "---- errors ----"
+          grep -E "error:" build/build.log | sort -u | head -200 || true
+          echo "---- warnings ----"
+          grep -E "warning:" build/build.log | sort -u | head -200 || true
+          echo "errors:   $(grep -E 'error:' build/build.log | sort -u | wc -l)"
+          echo "warnings: $(grep -E 'warning:' build/build.log | sort -u | wc -l)"
+
+      - name: Test (unit + UI)
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -project Ledgerly.xcodeproj -scheme Ledgerly \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build/DerivedData \
+            -resultBundlePath build/TestResults.xcresult \
+            2>&1 | tee build/test.log | grep -E "Test Case|Test Suite|error:|\*\* |Executed" || true
+          grep -q "TEST EXECUTE SUCCEEDED" build/test.log
+
+      - name: Test summary
+        if: always()
+        run: |
+          grep -E "Executed [0-9]+ tests" build/test.log | tail -5 || true
+          echo "---- failures ----"
+          grep -E "error:|failed" build/test.log | sort -u | head -100 || true
+
+      - name: Export screenshots from test results
+        if: always()
+        run: |
+          mkdir -p build/screenshots
+          xcrun xcresulttool export attachments --path build/TestResults.xcresult --output-path build/screenshots || true
+          ls build/screenshots | head -50 || true
+
+      - name: Upload logs, results and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ledgerly-ci
+          path: |
+            build/build.log
+            build/test.log
+            build/screenshots
+          retention-days: 14

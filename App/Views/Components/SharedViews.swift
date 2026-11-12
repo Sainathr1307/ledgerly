@@ -69,7 +69,7 @@ struct CardView<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -93,7 +93,7 @@ struct UndoBanner: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(.separator), lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(uiColor: .separator), lineWidth: 0.5))
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
     }

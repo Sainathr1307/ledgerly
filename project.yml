@@ -36,6 +36,7 @@ targets:
       - path: App
         excludes:
           - "**/*.md"
+          - "**/*.example"
     dependencies:
       - package: LedgerlyCore
         product: LedgerlyCore
